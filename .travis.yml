@@ -1,0 +1,34 @@
+language: java
+
+jdk:
+  - oraclejdk8
+  
+before_script:
+  - sudo apt-get --yes --force-yes update
+  - sudo apt-get --yes --force-yes install python-software-properties
+  - sudo add-apt-repository --y ppa:webupd8team/java
+  - sudo apt-get --yes --force-yes update
+  - sudo apt-get --yes --force-yes install mysql-server
+  - mysql -e 'source HospitAppDB.sql;' -uroot
+  - sudo apt-get --yes --force-yes install oracle-java7-installer
+  - wget download.java.net/glassfish/4.0/release/glassfish-4.0.zip
+  - sudo apt-get --yes --force-yes install unzip
+  - sudo unzip glassfish-4.0.zip -d /opt
+  - export CLASSPATH=lib/junit-4.11.jar:lib/hamcrest-core-1.3.jar:lib/json-simple-1.1.1.jar:src/:bin/:lib/
+  - export PATH=/opt/glassfish4/bin/:$PATH
+  - sudo chmod +x /opt/glassfish4/bin/asadmin
+  - cd /opt/glassfish4/bin/ 
+  - sudo ./asadmin start-domain
+  - sudo ./asadmin --user admin --passwordfile /home/travis/build/ivxn2309/HospitAppServer/password.txt --host localhost --port 4848 create-jdbc-connection-pool --datasourceclassname org.apache.derby.jdbc.ClientDataSource --restype javax.sql.XADataSource --property portNumber=3306:password=h0sp1t4pp2015:user=hospitapp_admin:serverName=127.0.0.1:databaseName=hospitapp:create=true mysql_hospitapp_hospitapp_adminPool
+  - sudo ./asadmin create-jdbc-resource --user admin --port 4848 --host localhost --passwordfile=/home/travis/build/ivxn2309/HospitAppServer/password.txt --connectionpoolid mysql_hospitapp_hospitapp_adminPool hospitapp_jndi
+  #- sudo ./asadmin deploy /home/travis/build/ivxn2309/HospitAppServer/dist/HospitAppServer.war
+  - cd /home/travis/build/ivxn2309/HospitAppServer
+  - mkdir bin  
+ 
+  
+script:
+  - sudo cp dist/HospitAppServer.war /opt/glassfish4/glassfish/domains/domain1/autodeploy/
+  - javac -cp .:lib/junit-4.11.jar:lib/hamcrest-core-1.3.jar:lib/json-simple-1.1.1.jar -d bin src/java/test/ScheduleManagerTest.java
+  - java org.junit.runner.JUnitCore test.ScheduleManagerTest
+
+#- sudo cp dist/HospitAppServer.war /opt/glassfish4/glassfish/domains/domain1/autodeploy/
